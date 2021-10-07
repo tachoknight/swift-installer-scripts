@@ -1,16 +1,18 @@
 %global debug_package %{nil}
+%global linux_version fedora
 %global swifttag 5.5-RELEASE
 %global swiftbuild swift-source
 %global icu_version 65-1
 %global yams_version 4.0.2
 %global sap_version 0.4.3
 %global swift_crypto_version 1.1.5
+%global ninja_version 1.10.2
 
 Name:           swift-lang
 Version:        5.5
 Release:        1%{?dist}
 Summary:        Apple's Swift programming language
-License:        Apache 2.0
+License:        ASL 2.0 and Unicode
 URL:            https://swift.org
 
 Source0:        https://github.com/apple/swift/archive/swift-%{swifttag}.tar.gz#/swift.tar.gz
@@ -32,11 +34,10 @@ Source15:       https://github.com/unicode-org/icu/archive/release-%{icu_version
 Source16:       https://github.com/apple/swift-syntax/archive/swift-%{swifttag}.zip#/swift-syntax.tar.gz
 Source17:       https://github.com/jpsim/Yams/archive/%{yams_version}.zip
 Source18:       https://github.com/apple/swift-crypto/archive/refs/tags/%{swift_crypto_version}.tar.gz
+Source19:       https://github.com/ninja-build/ninja/archive/refs/tags/v%{ninja_version}.tar.gz#/ninja.tar.gz
 
-Patch0:         swift-for-fedora.patch
-Patch1:         nocyclades.patch
-Patch2:         pc-circular-dependencies-optimization.patch
-Patch3:		unusedvariable.patch
+Patch0:         nocyclades.patch
+Patch1:			unusedvariable.patch
  
 BuildRequires:  clang
 BuildRequires:  swig
@@ -53,7 +54,6 @@ BuildRequires:  libcurl-devel
 BuildRequires:  libuuid-devel
 BuildRequires:  libedit-devel
 BuildRequires:  libicu-devel
-BuildRequires:  ninja-build
 BuildRequires:  perl-podlators
 BuildRequires:  python3-six
 BuildRequires:  /usr/bin/pathfix.py
@@ -70,6 +70,7 @@ Requires:       ncurses-compat-libs
 
 ExclusiveArch:  x86_64 aarch64 
 
+Provides: 	swiftlang = %{version}-%{release}
 
 %description
 Swift is a general-purpose programming language built using 
@@ -84,7 +85,7 @@ correct programs easier for the developer.
 
 
 %prep
-%setup -q -c -n %{swiftbuild} -a 0 -a 1 -a 2 -a 3 -a 4 -a 5 -a 6 -a 7 -a 8 -a 9 -a 10 -a 11 -a 12 -a 13 -a 14 -a 15 -a 16 -a 17 -a 18
+%setup -q -c -n %{swiftbuild} -a 0 -a 1 -a 2 -a 3 -a 4 -a 5 -a 6 -a 7 -a 8 -a 9 -a 10 -a 11 -a 12 -a 13 -a 14 -a 15 -a 16 -a 17 -a 18 -a 19
 # The Swift build script requires directories to be named
 # in a specific way so renaming the source directories is
 # necessary
@@ -112,17 +113,14 @@ mv icu-release-%{icu_version} icu
 # Yams
 mv Yams-%{yams_version} yams
 
-# Since we require ninja for building, there's no sense to rebuild it just for Swift
-%patch0 -p0
+# Ninja
+mv ninja-%{ninja_version} ninja
 
 # Remove Cyclades as it has been removed from the Linux kernel
-%patch1 -p0
-
-# Cache PkgConfig and avoid reparsing multiple time the same file.
-%patch2 -p1
+%patch0 -p0
 
 # Temp patch to test libdispatch issue with clang 13
-%patch3 -p0
+%patch1 -p0
 
 # Fix python to python3 
 pathfix.py -pni "%{__python3} %{py3_shbang_opts}" swift/utils/api_checker/swift-api-checker.py
@@ -140,7 +138,7 @@ export PATH=$PWD/binforpython:$PATH
 %endif
 
 # Here we go!
-swift/utils/build-script --preset=buildbot_linux,no_test install_destdir=%{_builddir} installable_package=%{_builddir}/swift-%{version}-fedora.tar.gz
+swift/utils/build-script --preset=buildbot_linux,no_test install_destdir=%{_builddir} installable_package=%{_builddir}/swift-%{version}-%{linux_version}.tar.gz
 
 
 %install
